@@ -1,0 +1,279 @@
+---
+title: "Jira Service Management"
+description: "Access service desk tickets from Jira Service Management"
+---
+
+## How it works
+
+The Jira Service Management connector indexes the service desk tickets from the projects you select.
+Onyx checks JSM for new and changed tickets on the connector's refresh schedule. The default is every **30** minutes.
+
+For every JSM ticket, this connector pulls:
+
+- Title
+- Description
+- [Common fields](#indexed-metadata)
+- Comments
+- JSM-specific fields (request type, SLA information, approval status)
+
+The connector can index only the content that its JSM account can access.
+An API token does not give its owner additional JSM permissions.
+
+## JSM Cloud setup
+
+Jira Service Management Cloud is hosted and updated by Atlassian. Its site URL usually ends in `atlassian.net`.
+If your organization manages its JSM deployment and version, use the [JSM Data Center setup](#jsm-data-center-setup).
+
+### 1. Choose a connector account
+
+Use a dedicated JSM account for the connector.
+This makes its access easier to review and prevents a personal account change from stopping the connector.
+
+### 2. Learn where to check and grant access
+
+Use the checks below to troubleshoot missing content or grant the permission sync access in step 4.
+
+Ask a JSM administrator to complete these steps while signed in to JSM:
+
+<Steps>
+  <Step title="Manage global permissions">
+    Go to **Settings > System > Global permissions**. Use **Grant permission** to add a user or group.
+    You can also add the connector account to a group that already has the permission.
+
+    See Atlassian's [global permission
+    instructions](https://support.atlassian.com/jira-cloud-administration/docs/view-grant-revoke-global-permissions-in-jira/).
+  </Step>
+
+  <Step title="Manage service desk project permissions">
+    Go to **Settings > System > Admin Helper > Permission Helper**. Enter the connector account, a representative ticket,
+    and the permission that you want to check.
+
+    To grant a missing permission, update the project's permission scheme. Grant it to the account, one of its groups,
+    or one of its project roles. Repeat the check for each permission scheme and issue security level in use.
+
+    See Atlassian's [Permission Helper
+    instructions](https://support.atlassian.com/jira-cloud-administration/docs/check-a-users-access-from-a-work-item/).
+  </Step>
+
+  <Step title="Test restricted content">
+    Sign in as the connector account.
+    Confirm that it can open representative tickets and comments from each restriction type that you want to index.
+  </Step>
+</Steps>
+
+### 3. Grant indexing access
+
+For indexing without permission sync, the JSM account needs:
+
+- JSM product access.
+- **Browse Projects** for every service desk project that you want to index.
+- Access to each issue security level used by the indexed tickets.
+- Access to each restricted comment that you want to index.
+
+A standard JSM agent can run the connector if the user has all required access.
+
+### 4. Add permission sync access
+
+<Warning>
+  Onyx treats everything inside a JSM project as accessible to everyone who can see the project.
+  It does not sync JSM issue security levels or restricted comment visibility.
+  Do not enable permission sync for projects that use these restrictions.
+</Warning>
+
+Grant all indexing access from the previous step. Then grant one of these administrative access options:
+
+- **Administer Jira** globally.
+- **Administer Projects** in every indexed service desk project.
+
+If the account does not have **Administer Jira**, you must also grant the global **Browse users and groups** permission.
+Onyx uses this access to read permission schemes, project roles, users, groups, and group membership.
+
+<Note>
+  **Administer Jira** does not always grant access to ticket content. Grant and test the indexing access separately.
+</Note>
+
+### 5. Create the API token
+
+Create an API token from the connector account.
+Follow Atlassian's [API token
+instructions](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/).
+
+If you create a token with scopes, enable **Scoped API Token** when you configure the connector in Onyx.
+
+For indexing, grant the token the `read:jira-work` and `read:servicedesk-request` scopes. For permission sync,
+also grant `read:jira-user` and `manage:jira-configuration`. Alternatively,
+grant the complete granular read scopes listed for these JSM APIs:
+
+- [Issue search and fetch](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/)
+- [Service Desk requests](https://developer.atlassian.com/cloud/jira/service-desk/rest/api-group-request/)
+- [Project permission schemes](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-project-permission-schemes/)
+- [Project roles](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-project-roles/)
+- [Groups and group members](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-groups/)
+
+Token scopes limit the token. They do not replace the connector account access from the previous steps.
+
+## JSM Data Center setup
+
+These instructions apply to JSM Data Center 5 and later.
+
+### 1. Choose a connector account
+
+Use a dedicated JSM account for the connector.
+This makes its access easier to review and prevents a personal account change from stopping the connector.
+
+### 2. Learn where to check and grant access
+
+Use the checks below to troubleshoot missing content or grant the permission sync access in step 4.
+
+Ask a JSM administrator to complete these steps while signed in to JSM:
+
+<Steps>
+  <Step title="Manage global permissions">
+    Go to **Administration > System > Global permissions**. Data Center grants global permissions to groups,
+    not individual accounts. Grant a permission to a group, then add the connector account to that group.
+
+    See Atlassian's [global permission
+    instructions](https://confluence.atlassian.com/adminjiraserver/managing-global-permissions-938847142.html).
+  </Step>
+
+  <Step title="Manage project permissions">
+    Go to **Administration > System**, then select **Permission helper** in the left panel. Enter the connector account,
+    a representative ticket, and the permission that you want to check.
+
+    To grant a missing permission, update the project's permission scheme.
+    Grant it to one of the account's groups or project roles.
+    Repeat the check for each permission scheme and issue security level in use.
+
+    See Atlassian's [Permission Helper
+    instructions](https://confluence.atlassian.com/adminjiraserver/jira-admin-helper-938847791.html).
+  </Step>
+
+  <Step title="Test restricted content">
+    Sign in as the connector account.
+    Confirm that it can open representative tickets and comments from each restriction type that you want to index.
+  </Step>
+</Steps>
+
+### 3. Grant indexing access
+
+For indexing without permission sync, grant the connector account:
+
+- JSM product access.
+- **Browse Projects** for every service desk project that you want to index.
+- Access to each issue security level used by the indexed tickets.
+- Access to each restricted comment that you want to index.
+
+A standard JSM agent can run the connector if the user has all required access.
+
+### 4. Add permission sync access
+
+<Warning>
+  Onyx treats everything inside a JSM project as accessible to everyone who can see the project.
+  It does not sync JSM issue security levels or restricted comment visibility.
+  Do not enable permission sync for projects that use these restrictions.
+</Warning>
+
+Grant all indexing access from the previous step.
+Then add the connector account to a group with one of these global permissions:
+
+- **Jira administrators**
+- **Jira System administrators**
+
+Data Center requires this administrative access to read group membership. Onyx uses it to read permission schemes,
+project roles, users, groups, and group membership.
+
+### 5. Create the personal access token
+
+Create a personal access token from the connector account.
+Follow Atlassian's [Jira Data Center token
+instructions](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html).
+
+The token has the same access as its JSM account.
+JSM Data Center personal access tokens do not use JSM Cloud API scopes.
+
+## Permission sync limitations
+
+Review these limitations before you enable permission sync:
+
+- Onyx maps JSM users to Onyx users by email address. JSM Cloud profile visibility can hide `emailAddress`, even
+  from an administrator's API token. JSM Data Center can also hide or mask user email addresses. A missing, hidden,
+  or masked email prevents Onyx from mapping that user.
+  Review Atlassian's [profile visibility
+  documentation](https://developer.atlassian.com/cloud/jira/platform/profile-visibility/)
+  and [Data Center email visibility
+  settings](https://confluence.atlassian.com/adminjiraserver0912/configuring-jira-application-options-1346048127.html).
+- Onyx supports static **Browse Projects** grants to users, groups, and project roles. Dynamic grants such as
+  Reporter, Assignee, Project Lead, and custom user fields cannot map to a static Onyx access list.
+- Onyx treats JSM's **Anyone** and **Application access** grants as accessible to all Onyx users.
+  JSM application access normally includes only licensed JSM users.
+  This mapping can give access to Onyx users who cannot access JSM.
+- Permission sync requests up to 9,999 JSM groups visible to the connector account.
+  JSM can apply a lower limit, so large sites might not sync every group.
+- JSM Cloud API tokens expire after 1 to 365 days. Rotate the token before it expires.
+
+## Configure the connector
+
+<Steps>
+  <Step title="Provide credentials">
+    Go to **Admin Panel → Connectors** and select **Jira Service Management**. Select **New Jira Service Management Account**. For JSM Cloud,
+    enter the connector account's email address and API token. For JSM Data Center,
+    leave the email field empty and enter the personal access token.
+
+    Select **Create**.
+  </Step>
+
+  <Step title="Configure the JSM source">
+    Enter the JSM site in **Site URL**. For JSM Cloud, the URL is usually `https://your-domain.atlassian.net`.
+    Enable **Scoped API Token** if you created a JSM Cloud token with scopes.
+  </Step>
+
+  <Step title="Choose what to index">
+    Select one indexing mode:
+
+    - **Everything** indexes all service desk tickets that the connector account can access.
+    - **Project** indexes one JSM service desk project. Enter its project key, such as `SD`.
+    - **JQL Query** indexes tickets that match a custom JQL query.
+    Do not include time filters or an `ORDER BY` clause.
+
+    To exclude comments from specified accounts, add their email addresses to **Comment Email Blacklist**.
+  </Step>
+
+  <Step title="Choose document access">
+    Under **Document Access**, select **Everyone in Your Organization**, **Specific Groups**, or **Sync with Jira Service Management**.
+    **Sync with Jira Service Management** mirrors JSM access and is the default where available.
+
+    **Specific Groups** and **Sync with Jira Service Management** need the Business or Enterprise tier on Onyx Cloud,
+    or the Enterprise Edition when self-hosted.
+  </Step>
+
+  <Step title="Create the connector">
+    Select **Create Connector**. It is enabled when the required checks pass.
+  </Step>
+</Steps>
+
+### Indexed metadata
+
+```
+- Issue Key
+- Priority
+- Status
+- Resolution
+- Labels
+- Created
+- Updated
+- Due Date
+- Issue Type
+- Resolution Date
+- Parent Issue Key
+- Project Name
+- Project Key
+- Reporter
+- Reporter Email
+- Assignee
+- Assignee Email
+- Request Type (JSM-specific)
+- SLA Time to Resolution (JSM-specific)
+- SLA Time to First Response (JSM-specific)
+- SLA Breached Status (JSM-specific)
+- Approval Status (JSM-specific)
+```
